@@ -1,3 +1,10 @@
+/* *************************************************************************
+Simulation Model of a Single Server Queue
+File: Event.h
+By: Trisha Funtanilla
+ECS 152A Computer Networks
+************************************************************************* */
+
 #ifndef EventH
 #define EventH
 

@@ -1,3 +1,9 @@
+/* *************************************************************************
+Simulation Model of a Single Server Queue
+File: Packets.cpp
+By: Trisha Funtanilla
+ECS 152A Computer Networks
+************************************************************************* */
 #include <cstdlib>
 #include "Packets.h"
 

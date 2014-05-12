@@ -1,3 +1,10 @@
+/* *************************************************************************
+Simulation Model of a Single Server Queue
+File: LinkedList.h
+By: Trisha Funtanilla
+ECS 152A Computer Networks
+************************************************************************* */
+
 #ifndef LinkedListH
 #define LinkedListH
 #include "Event.h"

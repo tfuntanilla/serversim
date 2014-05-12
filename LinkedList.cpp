@@ -1,3 +1,9 @@
+/* *************************************************************************
+Simulation Model of a Single Server Queue
+File: LinkedList.cpp
+By: Trisha Funtanilla
+ECS 152A Computer Networks
+************************************************************************* */
 #include <iostream>
 #include "LinkedList.h"
 
