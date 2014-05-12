@@ -1,0 +1,27 @@
+#ifndef EventH
+#define EventH
+
+class Event {
+
+public:
+	double eventTime;		// time when the event occurs
+	bool isArrival;			// is the type arrival or not
+	Event();
+	~Event();
+	void setTime(double t);	
+};
+
+class ArrivalEvent: public Event {
+public:
+	ArrivalEvent(double eTime, bool id);
+	~ArrivalEvent();
+};
+
+
+class DepEvent: public Event {
+public:
+	DepEvent(double eTime, bool id);
+	~DepEvent();
+};
+
+#endif
