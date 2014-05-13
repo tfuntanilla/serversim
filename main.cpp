@@ -25,6 +25,7 @@ printing of the statistics.
 
 using namespace std;
 
+double getArea(double totTime);
 double negExp(double rate);	// generate values for negative exponential distribution
 void processArrivalEvent(int &len, double &currentTime, 
 	double lamda, double mu, LinkedList &tempList);
@@ -32,7 +33,8 @@ void processDepEvent(int index, int &len, double &currentTime,
 	double lambda, double mu, LinkedList &tempList);
 // prints global events list in a file; for debugging purposes
 void printGEL(ofstream &out);
-void printStats(int len, double totTime);
+void printStats(int len, double totTime, double qLength);
+
 
 int totalPackets = 0, droppedPackets = 0, 
 	seenPackets = 0, MAXBUFFER;
@@ -41,13 +43,15 @@ bool isBusy = false; // keep track of when the server stops being busy/becomes b
 queue<Packets*> packetsQ;	// FIFO queue/buffer
 list<Event*> globalEventList;	// Global events list
 list<double> transTimeList;		// list containing all transmission times of all packets
+list<Event*> GELcopy; // copy - for calculating area
+list<int> currQLength; // list of queue length for each event
 
 int main() {
 	
-	time_t totalTime, endTime;	// keeps track of actual simulation program running time
 	int length = 0;	// number of packets in the queue
 	double arrivalRate, serviceRate;
 	double ttime = 0;	// current time
+	double N = 0; // mean queue length
 	ofstream eventsList;
 	eventsList.open("eventsList.txt");
 
@@ -57,11 +61,10 @@ int main() {
 	cin >> arrivalRate;
 	cout << "Service rate (mu): ";	// set service rate mu
 	cin >> serviceRate;
+	
 	// set MAXBUFFER, if we want infinite, just set to a huge number
 	cout << "MAXBUFFER: "; 
 	cin >> MAXBUFFER;
-
-	time(&totalTime);	// start server running time
 	
 	// create first arrival event and insert it to tempList
 	ttime = negExp(arrivalRate) + ttime; 
@@ -89,15 +92,13 @@ int main() {
 
 	}
 	
-	time(&endTime);
-	// stop server running time
-	totalTime = (double)(difftime(endTime, totalTime)) + ttime;	
 	if (isBusy == true) { // if server was busy until the very end
 		busyTime = busyTime + (ttime - start);
 	}
 	cout << "================================" << endl;
-	printStats(length, totalTime);
 	printGEL(eventsList);
+	N = getArea(ttime)/ttime;
+	printStats(length, ttime, N);
 	eventsList.close();
 
 	return 0;
@@ -143,6 +144,7 @@ void processArrivalEvent(int &len, double &currentTime, double lambda,
 	else { // if the server is busy push packet into queue or drop if queue is full
 		
 		seenPackets += len; // keep track of how many packets are seen in the queue
+		// seenPackets will be used for debugging mean queue length results
 		if (isBusy == false) {
 			start = currentTime;
 		}
@@ -173,6 +175,37 @@ void processDepEvent(int index, int &len, double &currentTime,
 	}
 }
 
+double getArea(double totTime) {
+
+	Event *event = new Event();
+	Event *event2 = new Event();
+	
+	// width will be the difference in time between 2 events
+	// i.e. width of an individual rectangle in the curve
+	double width = 0, sum = 0;
+
+	event = GELcopy.front();
+	// calculate area of last rectangle in graph
+	width = totTime - event->eventTime; 
+	sum = width * currQLength.front();
+	currQLength.pop_front();
+
+	while (!GELcopy.empty()) {
+		event = GELcopy.front();
+		GELcopy.pop_front();
+		if (!currQLength.empty()) {
+			event2 = GELcopy.front();
+			width = event->eventTime - event2->eventTime;
+			sum = sum + width*currQLength.front();
+			currQLength.pop_front();
+		}
+		else {
+			break;
+		}
+	}
+	return sum;
+}
+
 void printGEL(ofstream &out){
 
 	out << "Time QueueLength" << endl;
@@ -184,19 +217,23 @@ void printGEL(ofstream &out){
 
 		if ((event->isArrival) == true) {
 			q++;
-			out << event->eventTime << setprecision(12) << " " << q << endl;
+			out << event->eventTime << setprecision(7) << " " << q << endl;
 		}
 		else {
 			q--;
-			out << event->eventTime << setprecision(12) << " " << q << endl;
+			out << event->eventTime << setprecision(7) << " " << q << endl;
 		}
+
+		// collect data for calculating mean queue length
+		currQLength.push_front(q);
+		GELcopy.push_front(event);
 
 		globalEventList.pop_front();
 	}
 
 }
 
-void printStats(int len, double totTime){
+void printStats(int len, double totTime, double qLength){
 	/*
 	Event *event = new Event();
 	while (!globalEventList.empty()) {
@@ -212,10 +249,10 @@ void printStats(int len, double totTime){
 		transTimeList.pop_front();
 	}
 	*/
-	//cout << seenPackets << endl;
+
 	cout << "Utilization: " << ((double) busyTime / (double) totTime) << endl;
-	cout << "Mean Queue Length: " << 
-		((double) seenPackets / (double) totalPackets) << endl;
+	cout << "Mean Queue Length: " << qLength << endl;
+	//cout << (double) (seenPackets/totalPackets) << endl;
 	//cout << "Total packets: " << totalPackets << endl;
 	cout << "Packets dropped: " << droppedPackets << endl;
 }
